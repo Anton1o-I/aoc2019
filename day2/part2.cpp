@@ -103,8 +103,18 @@ struct Intcode {
 };
 
 int main(){
-	Intcode program = Intcode("values.txt");
-	program.set_inputs(12,2);
-	program.run_code();
-	std::cout << "POSITION 0 = " << program.get_first();
+	for (int i = 0; i<100; i++){
+		for (int j=0; j<100; j++){
+			Intcode program = Intcode("values.txt");
+			program.set_inputs(i,j);
+			program.run_code();
+			if (program.get_first() == 19690720)
+			{
+				std::cout << "NOUN = " << i << "VERB = " << j;
+				std::cout << "\n ANSWER =" << 100 * i + j;
+				goto end_program;
+			}
+		}
+	}
+end_program:;
 }

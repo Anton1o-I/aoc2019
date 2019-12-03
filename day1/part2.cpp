@@ -21,14 +21,12 @@ int main(){
 			int v = std::stoi(line);
 			int module_fuel = mass(v);
 			total += module_fuel;
-			std::cout << "Module needed " << module_fuel << " fuel \n";
 			while(module_fuel > 0)
 			{
 				int temp = mass(module_fuel);
 				if (temp < 0){
 					temp = 0;
 				}
-				std::cout << "temp = " << temp;
 				total+=temp;
 				module_fuel = temp;
 			}
@@ -36,6 +34,5 @@ int main(){
 		file.close();
 	}
 	else std::cout<< "Unable to open file";
-	std::cout << "Total Fuel Required =" << total;
 	return 0;
 }

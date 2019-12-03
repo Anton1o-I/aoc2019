@@ -4,11 +4,6 @@
 #include <string>
 
 
-int mass(int m){
-	return floor(m/3)-2;
-}
-
-
 int main(){
 	std::string line;
 	std::ifstream file;

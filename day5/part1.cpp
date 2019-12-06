@@ -114,7 +114,9 @@ void IntCode::add(){
 }
 
 void IntCode::input(){
-	int user_input = 1;
+	int user_input;
+	std::cout<<"Input:";
+	std::cin>>user_input;
 	instructions[current.param1] = user_input;
 }
 

@@ -10,30 +10,16 @@ struct Pair {
 };
 
 struct Object {
+	int idx;
 	std::string name;
-	Object *Direct;
-	std::vector< Object *> Indirect;
-	std::vector< Object *> Next;
+	int Direct;
+	std::vector< int > Indirect;
+	std::vector< int > Next;
 	void get_indirects();
 
-	Object():Indirect(),Next(){};
+	void add_indirect(Object direct);
 };
 
-Object new_object(std::string obj, Object * direct = NULL){
-	Object o;
-	if (direct == NULL){
-		o.name = obj;
-	}
-	else {
-		o.name = obj;
-		o.Direct = direct;
-		o.Indirect.push_back(direct->Direct);
-		for(int i=0; i<direct->Indirect.size(); i++){
-			o.Indirect.push_back(direct->Indirect[i]);
-		};
-	}
-	return o;
-}
 
 Pair parse_line(std::string str){
 	std::stringstream ss(str);
@@ -72,11 +58,13 @@ std::vector< Pair > read_file(std::string address){
 }
 
 struct ObjList{
-	std::vector<Object> list;
+	std::vector< Object > list;
 
 	int find_object(std::string n);
 	void add_objects(Pair p);
 	int count_orbits();
+	int add_new(std::string n);
+	void update_indirects(Object o);
 };
 
 int ObjList::find_object(std::string n){
@@ -88,14 +76,23 @@ int ObjList::find_object(std::string n){
 	return -1;
 }
 
-void update_nexts(Object * o){
-	for(int i = 0; i < o->Next.size(); i++){
-		if(o->Next[i]->Next.size() != 0){
-			update_nexts(o->Next[i]);
-		}
-		else
-		{
-			o->Next[i]->Next.push_back(o->Direct);
+int ObjList::add_new(std::string n){
+	int idx = list.size();
+	Object o;
+	o.idx = idx;
+	o.name = n;
+	o.Direct = -1;
+	list.push_back(o);
+	return idx;
+}
+
+void ObjList::update_indirects(Object o){
+	for(int i = 0; i < o.Next.size(); i++){
+		Object t = list[o.Next[i]];
+		t.add_indirect(o);
+		list[t.idx] = t;
+		if (t.Next.size() > 0){
+			update_indirects(t);
 		}
 	}
 }
@@ -103,49 +100,42 @@ void update_nexts(Object * o){
 void ObjList::add_objects(Pair p){
 	int loc1 = find_object(p.first);
 	int loc2 = find_object(p.second);
-	Object o1;
-	Object o2;
-	if (loc1 == -1 && loc2 == -1)
+	Object o1, o2;
+	if (loc1 == -1) 
 	{
-		o1.name = p.first;
-		o1.Next.push_back(&o2);
-		o2.name = p.second;
-		o2.Direct = &o1;
-		list.push_back(o1);
-		list.push_back(o2);
+		int i1 = add_new(p.first);
+		o1 = list[i1];
 	}
-	else if (loc1 != -1 && loc2 == -1)
+	else
 	{
 		o1 = list[loc1];
-		o1.Next.push_back(&o2);
-		o2.name = p.second;
-		o2.Direct = &o1;
-		o2.Indirect.push_back(o1.Direct);
-		for (int j = 0; j<o1.Indirect.size(); j++){
-			o2.Indirect.push_back(o1.Indirect[j]);
-		}
-		list.push_back(o2);
 	}
-	else if(loc1 != -1 && loc2 != -1)
+	if (loc2 == -1)
 	{
-		o1 = list[loc1];
+		int i2 = add_new(p.second);
+		o2 = list[i2];
+	}
+	else 
+	{
 		o2 = list[loc2];
-		o2.Direct = &o1;
-		std::cout<<"SEGFAULT in 1";
-		if(o2.Next.size() > 0){
-			update_nexts(&o2);
-		}
 	}
-	else if(loc1 ==-1 && loc2 != -1)
-	{
-		o1.name = p.first;
-		o2 = list[loc2] ;
-		o2.Direct = &o1;
-		o1.Next.push_back(&o2);
-		std::cout<<"SEGFAULT in 11";
-		if (o2.Next.size() > 0){
-			update_nexts(&o2);
-		}
+	o2.Direct = o1.idx;
+	o1.Next.push_back(o2.idx);
+	o2.add_indirect(o1);
+	if (loc2 != -1){
+		update_indirects(o2);
+	}
+	list[o1.idx] = o1;
+	list[o2.idx] = o2;
+}
+
+void Object::add_indirect(Object o){
+	Indirect.clear();
+	if (o.Direct >= 0){
+		Indirect.push_back(o.Direct);
+	}
+	for (int i = 0; i < o.Indirect.size(); i++){
+		Indirect.push_back(o.Indirect[i]);
 	}
 }
 
@@ -153,7 +143,7 @@ int ObjList::count_orbits(){
 	int count = 0;
 	for(int i=0; i<list.size(); i++){
 		count += list[i].Indirect.size();
-		if (list[i].Direct != NULL){
+		if (list[i].Direct >= 0){
 			count +=1;
 		}
 	}

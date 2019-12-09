@@ -1,3 +1,4 @@
 .ccls
 .ccls-cache/
 *.out
+.vscode

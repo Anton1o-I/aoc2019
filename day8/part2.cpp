@@ -151,7 +151,13 @@ int fewest_zeros(std::vector< Layer > layers){
 void Image::print(){
 	for(int i = 0; i < out_image.n_row; i++){
 		for(int j = 0; j < out_image.n_col; j++){
-			std::cout<<out_image[i][j];
+			if(out_image[i][j] == 0){
+				std::cout<<" ";
+			}
+			else
+			{
+				std::cout<<"\u2588";
+			}
 		}
 		std::cout<<'\n';
 	}

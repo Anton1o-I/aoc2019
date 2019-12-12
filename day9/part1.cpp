@@ -26,8 +26,8 @@ struct Directive {
 	int mode_param2;
 	int mode_param3;
 	int opcode;
-	long long int param1;
-	long long int param2;
+	int param1;
+	int param2;
 	int param3;
 };
 
@@ -55,7 +55,7 @@ struct IntCode{
 		void run_code();
 		Directive get_directives(int code);
 		void print_instructions();
-		long long int get_value(int mode, int offset);
+		int get_pos(int mode, int offset);
 		void multiply();
 		void add();
 		void input();
@@ -84,78 +84,51 @@ Directive IntCode::get_directives(int idx){
 		code -= d.mode_param1*100;
 		d.opcode = code;
 
-		if (d.opcode == 3)
+		if (d.opcode == 3 || d.opcode == 4 || d.opcode == 9)
 		{
-			if (d.mode_param1 == 0){
-				d.param1 = instructions[idx+1];
-			}
-			else if (d.mode_param1 == 2){
-				d.param1 = relative_base + instructions[idx+1];
-			}
-			else if (d.mode_param1 == 1){
-				d.param1 = idx+1;
-			}
-		}
-		else if (d.opcode == 4)
-		{
-			if (d.mode_param1 == 1){
-				d.param1 = idx+1;
-			}
-			else if(d.mode_param1 == 2){
-				d.param1 = relative_base + instructions[idx+1];
-			}
-			else if(d.mode_param1 == 0 ){
-				d.param1 = instructions[idx+1];
-			}
-		}
-		else if (d.opcode == 9)
-		{
-			d.param1 = get_value(d.mode_param1, 1);
+			d.param1 = get_pos(d.mode_param1, 1);
 		}
 		else if(d.opcode==1 || d.opcode==2||d.opcode==5||d.opcode==6||d.opcode==7||d.opcode==8){
-			d.param1 = get_value(d.mode_param1, 1);
-			d.param2 = get_value(d.mode_param2, 2);
-			d.param3 = get_value(d.mode_param3, 3);
+			d.param1 = get_pos(d.mode_param1, 1);
+			d.param2 = get_pos(d.mode_param2, 2);
+			d.param3 = get_pos(d.mode_param3, 3);
 		}
 		return d;
 }
 
-long long int IntCode::get_value(int mode, int offset){
+int IntCode::get_pos(int mode, int offset){
 	if ( mode == 1 )
 	{
-		return instructions[idx+offset];
+		return idx+offset;
 	}
 	else if( mode == 2)
 	{
-		int i = relative_base + instructions[idx+offset];
-		return instructions[i];
+		return relative_base + instructions[idx+offset];
 	}
 	else
 	{
-		int t = instructions[idx+offset];
-		return instructions[t];
+		return instructions[idx+offset];
 	}
 }
 
 void IntCode::multiply(){
-	instructions[current.param3] = current.param1 * current.param2;
+	instructions[current.param3] = instructions[current.param1] * instructions[current.param2];
 }
 
 void IntCode::add(){
-	instructions[current.param3] = current.param1 + current.param2;
+	instructions[current.param3] = instructions[current.param1] + instructions[current.param2];
 }
 
 void IntCode::input(){
-	int user_input;
+	long long int user_input;
 	std::cout<<"Input:";
 	std::cin>>user_input;
-	std::cout<<"PARAM TO UPDATE"<<current.param1;
 	instructions[current.param1] = user_input;
 }
 
 void IntCode::jumptrue(){
-	if(current.param1!=0){
-		idx=current.param2;
+	if(instructions[current.param1] !=0){
+		idx = instructions[current.param2];
 	}
 	else
 	{
@@ -164,8 +137,8 @@ void IntCode::jumptrue(){
 }
 
 void IntCode::jumpfalse(){
-	if(current.param1==0){
-		idx = current.param2;
+	if(instructions[current.param1]==0){
+		idx = instructions[current.param2];
 	}
 	else
 	{
@@ -174,7 +147,7 @@ void IntCode::jumpfalse(){
 }
 
 void IntCode::less(){
-	if(current.param1<current.param2){
+	if(instructions[current.param1]<instructions[current.param2]){
 		instructions[current.param3]=1;
 	}
 	else
@@ -184,7 +157,7 @@ void IntCode::less(){
 }
 
 void IntCode::equal(){
-	if(current.param1==current.param2){
+	if(instructions[current.param1]==instructions[current.param2]){
 		instructions[current.param3]=1;
 	}
 	else
@@ -198,12 +171,11 @@ void IntCode::output(){
 }
 
 void IntCode::adjust_relative(){
-	std::cout<<"ONE SHOULD = 1015"<<current.param1<<'\n';
-	relative_base += current.param1;
-	std::cout<<"RELATIVE BASE =="<<relative_base;
+	relative_base += instructions[current.param1];
 }
 
 void IntCode::run_code(){
+	idx = 0;
 	while (!halt)
 		{
 			current=get_directives(idx);
@@ -263,6 +235,7 @@ void IntCode::run_code(){
 				case 99:
 					break;
 				default:
+					std::cout<<"OP CODE"<<current.opcode;
 					std::cout<<"HALTING NOT ON PURPOSE";
 					halt = true;
 					break;
@@ -272,7 +245,5 @@ void IntCode::run_code(){
 
 int main(){
 	IntCode ic = IntCode("input.txt");
-
-	std::cout<<"INDEX 100   "<<ic.instructions[100]<<'\n';
 	ic.run_code();
 }
